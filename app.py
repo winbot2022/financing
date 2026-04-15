@@ -323,6 +323,12 @@ with c4:
 
 st.markdown("### 金額入力")
 
+input_method = st.radio(
+    "入力方法",
+    ["テンキー", "直接入力"],
+    horizontal=True
+)
+
 unit_val = st.radio(
     "単位",
     ["万円", "千円", "円"],
@@ -333,38 +339,48 @@ unit_val = st.radio(
 
 unit_map = {"万円": 10000, "千円": 1000, "円": 1}
 
-digits_now = st.session_state["amount_digits_bridge"] or "0"
-st.text_input("入力中", value=digits_now, disabled=True)
-
-key_rows = [
-    ["7", "8", "9", "000"],
-    ["4", "5", "6", "00"],
-    ["1", "2", "3", "0"],
-]
-
-for r_idx, row in enumerate(key_rows):
-    cols = st.columns(4)
-    for i, key in enumerate(row):
-        if cols[i].button(key, key=f"bridge_key_{r_idx}_{key}"):
-            append_bridge_digits(key)
-
-cols = st.columns(5)
-if cols[0].button("C", key="bridge_clear"):
-    clear_bridge_digits()
-if cols[1].button("⌫", key="bridge_back"):
-    backspace_bridge_digits()
-if cols[2].button("+1", key="bridge_plus1"):
-    st.session_state["amount_digits_bridge"] = str(int(st.session_state["amount_digits_bridge"] or "0") + 1)
-if cols[3].button("+10", key="bridge_plus10"):
-    st.session_state["amount_digits_bridge"] = str(int(st.session_state["amount_digits_bridge"] or "0") + 10)
-if cols[4].button("前回金額を使う"):
-    st.session_state["amount_digits_bridge"] = str(
-        int(st.session_state["last_amount_bridge"] / unit_map[unit_val])
+if input_method == "直接入力":
+    amount_base = st.number_input(
+        "金額",
+        min_value=0,
+        step=1,
+        value=0,
+        key="bridge_direct_input"
     )
+    amount_val = int(amount_base) * unit_map[unit_val]
 
+else:
+    digits_now = st.session_state["amount_digits_bridge"] or "0"
+    st.text_input("入力中", value=digits_now, disabled=True)
 
+    key_rows = [
+        ["7", "8", "9", "000"],
+        ["4", "5", "6", "00"],
+        ["1", "2", "3", "0"],
+    ]
 
-amount_val = int(st.session_state["amount_digits_bridge"] or "0") * unit_map[unit_val]
+    for r_idx, row in enumerate(key_rows):
+        cols = st.columns(4)
+        for i, key in enumerate(row):
+            if cols[i].button(key, key=f"bridge_key_{r_idx}_{key}"):
+                append_bridge_digits(key)
+
+    cols = st.columns(5)
+    if cols[0].button("C", key="bridge_clear"):
+        clear_bridge_digits()
+    if cols[1].button("⌫", key="bridge_back"):
+        backspace_bridge_digits()
+    if cols[2].button("+1", key="bridge_plus1"):
+        st.session_state["amount_digits_bridge"] = str(int(st.session_state["amount_digits_bridge"] or "0") + 1)
+    if cols[3].button("+10", key="bridge_plus10"):
+        st.session_state["amount_digits_bridge"] = str(int(st.session_state["amount_digits_bridge"] or "0") + 10)
+    if cols[4].button("前回金額を使う", key="bridge_last_amount"):
+        st.session_state["amount_digits_bridge"] = str(
+            int(st.session_state["last_amount_bridge"] / unit_map[unit_val])
+        )
+
+    amount_val = int(st.session_state["amount_digits_bridge"] or "0") * unit_map[unit_val]
+
 
 st.markdown(f"**確定金額：{amount_val:,.0f} 円**")
 
